@@ -1,0 +1,132 @@
+#include <iostream>
+#include <vector>
+#include <queue>
+#include <algorithm>
+
+using namespace std;
+
+// Container Information
+struct Container {
+    int containerId;
+    int weight;
+
+    Container(int id, int w) : containerId(id), weight(w) {}
+};
+
+// Warehouse Section
+struct WarehouseSection {
+    int sectionId;
+    int currentLoad;
+    vector<Container> containers;
+
+    WarehouseSection(int id)
+        : sectionId(id), currentLoad(0) {}
+};
+
+// Min Heap Comparator
+struct CompareLoad {
+    bool operator()(WarehouseSection* a, WarehouseSection* b) {
+        return a->currentLoad > b->currentLoad;
+    }
+};
+
+class WarehouseContainerBalancer {
+public:
+    vector<WarehouseSection*> balanceContainers(
+        vector<Container>& containers,
+        int numberOfSections) {
+
+        priority_queue<
+            WarehouseSection*,
+            vector<WarehouseSection*>,
+            CompareLoad> minHeap;
+
+        // Create warehouse sections
+        for (int i = 1; i <= numberOfSections; i++) {
+            minHeap.push(new WarehouseSection(i));
+        }
+
+        // Sort containers by weight (largest first)
+        sort(containers.begin(), containers.end(),
+             [](const Container& a, const Container& b) {
+                 return a.weight > b.weight;
+             });
+
+        // Assign containers
+        for (const auto& container : containers) {
+            WarehouseSection* section = minHeap.top();
+            minHeap.pop();
+
+            section->containers.push_back(container);
+            section->currentLoad += container.weight;
+
+            minHeap.push(section);
+        }
+
+        vector<WarehouseSection*> result;
+
+        while (!minHeap.empty()) {
+            result.push_back(minHeap.top());
+            minHeap.pop();
+        }
+
+        sort(result.begin(), result.end(),
+             [](WarehouseSection* a, WarehouseSection* b) {
+                 return a->sectionId < b->sectionId;
+             });
+
+        return result;
+    }
+};
+
+int main() {
+
+    vector<Container> containers = {
+        {101, 50},
+        {102, 35},
+        {103, 25},
+        {104, 40},
+        {105, 15},
+        {106, 20},
+        {107, 30},
+        {108, 10}
+    };
+
+    int warehouseSections = 3;
+
+    WarehouseContainerBalancer balancer;
+
+    vector<WarehouseSection*> allocation =
+        balancer.balanceContainers(
+            containers,
+            warehouseSections);
+
+    cout << "===== Warehouse Shipping Container Balancer =====\n\n";
+
+    for (auto section : allocation) {
+
+        cout << "Section " << section->sectionId << "\n";
+        cout << "Total Load: "
+             << section->currentLoad
+             << " tons\n";
+
+        cout << "Containers:\n";
+
+        for (const auto& container : section->containers) {
+            cout << "  Container ID: "
+                 << container.containerId
+                 << " | Weight: "
+                 << container.weight
+                 << " tons\n";
+        }
+
+        cout << "----------------------------------\n";
+    }
+
+    // Release memory
+    for (auto section : allocation) {
+        delete section;
+    }
+
+    return 0;
+}
