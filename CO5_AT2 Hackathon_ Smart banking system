@@ -1,0 +1,164 @@
+#include <iostream>
+#include <fstream>
+#include <string>
+using namespace std;
+
+//================ ABSTRACT CLASS ==================
+class Account
+{
+protected:
+    string name;
+    int accNo;
+    double balance;
+
+public:
+    Account(string n, int a, double b)
+    {
+        name = n;
+        accNo = a;
+        balance = b;
+    }
+
+    virtual void calculateInterest() = 0;
+
+    virtual void display()
+    {
+        cout << "\nName      : " << name;
+        cout << "\nAccount   : " << accNo;
+        cout << "\nBalance   : " << balance << endl;
+    }
+
+    virtual ~Account()
+    {
+        cout << "\nAccount Closed.\n";
+    }
+
+    // Function Overloading
+    void deposit(int amount)
+    {
+        balance += amount;
+    }
+
+    void deposit(double amount)
+    {
+        balance += amount;
+    }
+
+    // Operator Overloading
+    Account& operator+(double amount)
+    {
+        balance += amount;
+        return *this;
+    }
+
+    double getBalance()
+    {
+        return balance;
+    }
+
+    string getName()
+    {
+        return name;
+    }
+};
+
+//================ SINGLE INHERITANCE ==================
+class Savings : public Account
+{
+public:
+    Savings(string n, int a, double b)
+        : Account(n, a, b) {}
+
+    void calculateInterest()
+    {
+        balance += balance * 0.05;
+    }
+
+    void display()
+    {
+        cout << "\n----- Savings Account -----";
+        Account::display();
+    }
+
+    ~Savings()
+    {
+        cout << "Savings Destructor\n";
+    }
+};
+
+//================ MULTILEVEL INHERITANCE ==================
+class PremiumSavings : public Savings
+{
+public:
+    PremiumSavings(string n, int a, double b)
+        : Savings(n, a, b) {}
+
+    void calculateInterest()
+    {
+        balance += balance * 0.08;
+    }
+
+    void display()
+    {
+        cout << "\n***** Premium Savings *****";
+        Savings::display();
+    }
+
+    ~PremiumSavings()
+    {
+        cout << "Premium Destructor\n";
+    }
+};
+
+//================ FILE HANDLING ==================
+void save(Account *a)
+{
+    ofstream file("accounts.txt", ios::app);
+
+    file << a->getName() << " "
+         << a->getBalance() << endl;
+
+    file.close();
+}
+
+//================ MAIN ==================
+int main()
+{
+    try
+    {
+        double amount;
+
+        cout << "Enter Initial Balance : ";
+        cin >> amount;
+
+        if(amount < 1000)
+            throw "Minimum balance should be Rs.1000";
+
+        // Dynamic Memory Allocation
+        Account *obj =
+        new PremiumSavings("Yashwanth",1001,amount);
+
+        obj->display();
+
+        obj->deposit(5000);
+        obj->deposit(1200.50);
+
+        *obj = *obj + 1000;
+
+        obj->calculateInterest();
+
+        cout << "\nAfter Transactions\n";
+        obj->display();
+
+        save(obj);
+
+        delete obj;
+    }
+
+    catch(const char *msg)
+    {
+        cout << "\nException : " << msg;
+    }
+
+    return 0;
+}
